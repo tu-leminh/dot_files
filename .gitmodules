@@ -1,6 +1,7 @@
 [submodule "neovim"]
 	path = neovim
 	url = https://github.com/LazyVim/starter.git
+	ignore = dirty
 [submodule "zsh/themes/powerlevel10k"]
 	path = zsh/themes/powerlevel10k
 	url = https://github.com/romkatv/powerlevel10k.git
