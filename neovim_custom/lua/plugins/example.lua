@@ -12,12 +12,6 @@ return {
     end
   },
   {
-    "LazyVim/LazyVim",
-    opts = {
-      colorscheme = "nordic",
-    },
-  },
-  {
     "m4xshen/hardtime.nvim",
     event = "VeryLazy",
     dependencies = { "MunifTanjim/nui.nvim" },

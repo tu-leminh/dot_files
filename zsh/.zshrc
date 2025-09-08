@@ -90,3 +90,6 @@ setopt correct
 # Custom keybindings
 # Ctrl+Space to accept autosuggestion
 bindkey '^ ' autosuggest-accept
+
+# Export terminal color settings for tmux and Neovim
+export TERM="xterm-256color"
