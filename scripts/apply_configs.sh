@@ -18,3 +18,7 @@ ln -sf "/home/tule5/dot_files/tmux/.tmux.conf" "$HOME/.tmux.conf"
 # Neovim
 mkdir -p "$HOME/.config"
 ln -sf "/home/tule5/dot_files/neovim" "$HOME/.config/nvim"
+
+# Neovim custom config
+ln -sf "/home/tule5/dot_files/neovim_custom/lua/config/custom.lua" "/home/tule5/dot_files/neovim/lua/config/custom.lua"
+ln -sf "/home/tule5/dot_files/neovim_custom/lua/plugins/example.lua" "/home/tule5/dot_files/neovim/lua/plugins/example.lua"
