@@ -28,6 +28,10 @@ The main custom configuration files are:
 *   `neovim_custom/lua/config/custom.lua`
 *   `neovim_custom/lua/plugins/example.lua`
 
+Custom plugins added:
+*   Nordic theme (`AlexvZyl/nordic.nvim`)
+*   Hardtime.nvim plugin (`m4xshen/hardtime.nvim`)
+
 ## Installation Process
 
 To apply the configurations:
