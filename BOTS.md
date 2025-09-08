@@ -13,14 +13,20 @@ This file is intended for bots and other automated tools to quickly understand t
     *   `rc.conf`: Configures the `ranger` file manager to show hidden files by default.
 *   `tmux/`: Contains the `.tmux.conf` file for `tmux` configuration.
     *   `.tmux.conf`: Configures `tmux` to use Zsh as the default shell.
+*   `neovim/`: Contains the Neovim configuration as a submodule based on LazyVim.
+*   `neovim_custom/`: Contains custom Neovim configurations that are tracked by the main repository.
 *   `scripts/`: Contains scripts for managing the dotfiles.
     *   `apply_configs.sh`: A shell script that creates symlinks from the home directory to the dotfiles in this repository. It also manages the Neovim configuration.
 
 ## Neovim (LazyVim) Configuration
 
-The Neovim configuration is based on LazyVim. The `apply_configs.sh` script automatically fetches the latest version of the [LazyVim starter template](https://github.com/LazyVim/starter) and sets it up.
+The Neovim configuration is based on LazyVim, and it's included as a submodule in the `neovim` directory.
 
-Custom configurations can be added to `neovim/lua/config/custom.lua`.
+Custom configurations are stored in the `neovim_custom` directory, which is tracked by the main repository. The `scripts/apply_configs.sh` script symlinks the custom configuration files from `neovim_custom` into the `neovim` directory.
+
+The main custom configuration files are:
+*   `neovim_custom/lua/config/custom.lua`
+*   `neovim_custom/lua/plugins/example.lua`
 
 ## Usage
 
