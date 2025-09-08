@@ -28,9 +28,15 @@ The main custom configuration files are:
 *   `neovim_custom/lua/config/custom.lua`
 *   `neovim_custom/lua/plugins/example.lua`
 
-## Usage
+## Installation Process
 
-To apply the configurations, run the `scripts/apply_configs.sh` script. This will create the necessary symlinks in your home directory and set up the Neovim configuration.
+To apply the configurations:
+
+1. Clone the repository to your local machine
+2. Initialize and update submodules: `git submodule update --init --recursive`
+3. Run the `scripts/apply_configs.sh` script. This will create the necessary symlinks in your home directory and set up the Neovim configuration.
+
+Note: The script assumes the repository is located at `/home/tule5/dot_files`. If you've cloned it elsewhere, you may need to adjust the paths in the script or move the repository to the expected location.
 
 ## Updating BOTS.md
 
