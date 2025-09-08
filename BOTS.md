@@ -4,9 +4,13 @@ This file is intended for bots and other automated tools to quickly understand t
 
 ## Repository Structure
 
-*   `zsh/`: Contains the `.zshrc` file for Zsh configuration.
-    *   `.zshrc`: Configures the Zsh shell.
+*   `zsh/`: Contains the `.zshrc` file for Zsh configuration and plugins.
+    *   `.zshrc`: Configures the Zsh shell with Powerlevel10k theme, syntax highlighting, autosuggestions, and history search.
     *   `themes/powerlevel10k`: Contains the Powerlevel10k theme for Zsh.
+    *   `plugins/`: Contains Zsh plugins for enhanced shell experience.
+        *   `zsh-syntax-highlighting`: Provides syntax highlighting for commands as you type.
+        *   `zsh-autosuggestions`: Suggests commands based on history and completions.
+        *   `zsh-history-substring-search`: Allows searching through command history with arrow keys.
 *   `lf/`: Contains the `lfrc` file for `lf` configuration.
     *   `lfrc`: Configures the `lf` file manager to show hidden files by default.
 *   `ranger/`: Contains the `rc.conf` file for `ranger` configuration.
