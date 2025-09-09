@@ -21,6 +21,7 @@ This file is intended for bots and other automated tools to quickly understand t
 *   `neovim_custom/`: Contains custom Neovim configurations that are tracked by the main repository.
 *   `scripts/`: Contains scripts for managing the dotfiles.
     *   `apply_configs.sh`: A shell script that creates symlinks from the home directory to the dotfiles in this repository. It also manages the Neovim configuration.
+    *   `install_latest_tools.sh`: A shell script that installs the latest versions of nvim, ranger, tmux, and zsh on Ubuntu systems.
 
 ## Neovim (LazyVim) Configuration
 
@@ -45,6 +46,17 @@ To apply the configurations:
 3. Run the `scripts/apply_configs.sh` script. This will create the necessary symlinks in your home directory and set up the Neovim configuration.
 
 Note: The script assumes the repository is located at `/home/tule5/dot_files`. If you've cloned it elsewhere, you may need to adjust the paths in the script or move the repository to the expected location.
+
+## Application Versions for Locking
+
+To ensure consistent behavior across different systems, we lock the versions of key applications. The `scripts/install_latest_tools.sh` script installs specific versions of these tools to maintain consistency:
+
+*   **Neovim**: v0.12.0-dev (development version)
+*   **Zsh**: v5.8
+*   **Ranger**: v1.9.3
+*   **Tmux**: v3.5a
+
+For the submodules (plugins and themes), specific commits are locked via Git submodules to ensure consistent behavior.
 
 ## Updating BOTS.md
 
