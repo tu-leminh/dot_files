@@ -16,7 +16,7 @@ This file is intended for bots and other automated tools to quickly understand t
 *   `ranger/`: Contains the `rc.conf` file for `ranger` configuration.
     *   `rc.conf`: Configures the `ranger` file manager to show hidden files by default.
 *   `tmux/`: Contains the `.tmux.conf` file for `tmux` configuration.
-    *   `.tmux.conf`: Configures `tmux` to use Zsh as the default shell and adds Vim-like keybindings for copy mode.
+    *   `.tmux.conf`: Configures `tmux` to use Zsh as the default shell, adds Vim-like keybindings for copy mode, and updates pane splitting to use - for horizontal splits and | for vertical splits.
 *   `neovim/`: Contains the Neovim configuration as a submodule based on LazyVim.
 *   `neovim_custom/`: Contains custom Neovim configurations that are tracked by the main repository.
 *   `scripts/`: Contains scripts for managing the dotfiles.
