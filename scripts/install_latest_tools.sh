@@ -1,16 +1,18 @@
 #!/bin/bash
 
-# Script to install specific versions of nvim, ranger, tmux, and zsh on Ubuntu
+# Script to install specific versions of nvim, ranger, tmux, zsh, lazygit, and k9s on Ubuntu
 # Works with both current and end-of-life Ubuntu versions
 # Target versions based on current installation:
 # - zsh: 5.8
 # - ranger: 1.9.3
 # - tmux: 3.5a
 # - neovim: 0.12.0-dev
+# - lazygit: latest stable
+# - k9s: latest stable
 
 set -e  # Exit on any error
 
-echo "Installing specific versions of nvim, ranger, tmux, and zsh..."
+echo "Installing specific versions of nvim, ranger, tmux, zsh, lazygit, and k9s..."
 
 # Function to check if a command exists
 command_exists() {
@@ -96,7 +98,7 @@ fi
 # Install ranger 1.9.3
 echo "Installing ranger 1.9.3..."
 if command_exists ranger; then
-    RANGER_VERSION=$(ranger --version | head -n 1 | cut -d' ' -f2)
+    RANGER_VERSION=$(ranger --version 2>&1 | head -n 1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
     if [[ "$RANGER_VERSION" == "1.9.3" ]]; then
         echo "ranger 1.9.3 is already installed"
     else
@@ -192,12 +194,95 @@ else
     echo "Neovim 0.12.0-dev installed"
 fi
 
+# Install lazygit (latest stable release)
+echo "Installing lazygit..."
+if command_exists lazygit; then
+    # For lazygit, we'll check if it's reasonably recent
+    LAZYGIT_VERSION=$(lazygit --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+    echo "lazygit $LAZYGIT_VERSION is already installed"
+    echo "Note: lazygit will not be updated automatically to avoid unnecessary reinstalls"
+else
+    # Install lazygit from GitHub releases
+    cd /tmp
+    LAZYGIT_URL=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep browser_download_url | grep Linux_x86_64 | head -n 1 | cut -d '"' -f 4)
+    if [ -z "$LAZYGIT_URL" ]; then
+        echo "Warning: Failed to find lazygit download URL, trying alternative method..."
+        # Alternative method using the GitHub releases page directly
+        LAZYGIT_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
+        if [ -z "$LAZYGIT_VERSION" ]; then
+            echo "Error: Failed to determine lazygit version"
+            exit 1
+        fi
+        LAZYGIT_URL="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+    fi
+    
+    echo "Downloading lazygit from: $LAZYGIT_URL"
+    if ! wget "$LAZYGIT_URL" -O lazygit.tar.gz; then
+        echo "Error: Failed to download lazygit"
+        exit 1
+    fi
+    
+    tar xzf lazygit.tar.gz lazygit
+    sudo install lazygit /usr/local/bin
+    rm lazygit.tar.gz lazygit
+    echo "lazygit installed"
+fi
+
+# Install k9s (latest stable release)
+echo "Installing k9s..."
+if command_exists k9s; then
+    # For k9s, we'll check if it's reasonably recent
+    K9S_VERSION_OUTPUT=$(k9s version 2>&1)
+    K9S_VERSION=$(echo "$K9S_VERSION_OUTPUT" | grep Version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+    if [ -z "$K9S_VERSION" ]; then
+        # Try alternative format
+        K9S_VERSION=$(echo "$K9S_VERSION_OUTPUT" | head -n 1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+    fi
+    echo "k9s $K9S_VERSION is already installed"
+    echo "Note: k9s will not be updated automatically to avoid unnecessary reinstalls"
+else
+    # Install k9s from GitHub releases
+    cd /tmp
+    K9S_URL=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | grep browser_download_url | grep Linux_x86_64 | head -n 1 | cut -d '"' -f 4)
+    if [ -z "$K9S_URL" ]; then
+        echo "Warning: Failed to find k9s download URL, trying alternative method..."
+        # Alternative method using the GitHub releases page directly
+        K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
+        if [ -z "$K9S_VERSION" ]; then
+            echo "Error: Failed to determine k9s version"
+            exit 1
+        fi
+        K9S_URL="https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_x86_64.tar.gz"
+    fi
+    
+    echo "Downloading k9s from: $K9S_URL"
+    if ! wget "$K9S_URL" -O k9s.tar.gz; then
+        echo "Error: Failed to download k9s"
+        exit 1
+    fi
+    
+    tar xzf k9s.tar.gz k9s
+    sudo install k9s /usr/local/bin
+    rm k9s.tar.gz k9s
+    echo "k9s installed"
+fi
+
 # Verify installations
 echo "Verifying installations..."
 echo "ZSH version: $(zsh --version)"
-echo "Ranger version: $(ranger --version | head -n 1)"
+echo "Ranger version: ranger $(ranger --version 2>&1 | head -n 1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
 echo "Tmux version: $(tmux -V)"
 echo "Neovim version: $(nvim --version | head -n 1)"
+if command_exists lazygit; then
+    echo "Lazygit version: $(lazygit --version 2>&1)"
+else
+    echo "Lazygit: Not installed"
+fi
+if command_exists k9s; then
+    echo "K9s version: $(k9s version 2>&1 | grep Version)"
+else
+    echo "K9s: Not installed"
+fi
 
 echo "All tools have been installed with the specified versions!"
 
