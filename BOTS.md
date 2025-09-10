@@ -45,14 +45,18 @@ To apply the configurations:
 
 Note: The script will automatically detect the repository location, making it portable across different systems.
 
-## Application Versions for Locking
+## Application Versions Tracking
 
-To ensure consistent behavior across different systems, we lock the versions of key applications. The `scripts/install_latest_tools.sh` script installs specific versions of these tools to maintain consistency:
+This repository installs the latest stable versions of key applications using the `scripts/install_latest_tools.sh` script. The currently installed versions are tracked here for reference:
 
-*   **Neovim**: v0.12.0-dev (development version)
+*   **Neovim**: v0.11.4 (stable version)
 *   **Zsh**: v5.8
 *   **Ranger**: v1.9.3
 *   **Tmux**: v3.5a
+*   **Lazygit**: v0.55.0
+*   **K9s**: v0.50.9
+
+Note: The script now installs the latest stable versions of all tools rather than locking to specific versions. These tracked versions are for reference purposes only.
 
 For the submodules (plugins and themes), specific commits are locked via Git submodules to ensure consistent behavior.
 
@@ -66,3 +70,4 @@ When to update this file:
 *   When you add a new script.
 *   When you change the directory structure.
 *   When you change the purpose of a file or directory.
+*   When you update the installed versions of applications (update the version tracking section).
