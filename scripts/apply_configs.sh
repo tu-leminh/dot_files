@@ -1,24 +1,34 @@
 #!/bin/bash
 # This script creates symlinks from the home directory to the dotfiles in this repository.
 
-# Zsh
-ln -sf "/home/tule5/dot_files/zsh/.zshrc" "$HOME/.zshrc"
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 
-# lf
-mkdir -p "$HOME/.config/lf"
-ln -sf "/home/tule5/dot_files/lf/lfrc" "$HOME/.config/lf/lfrc"
+# Check if we're on Ubuntu (for compatibility with older versions)
+if ! grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
+    echo "Warning: This script is designed for Ubuntu systems."
+fi
+
+# Zsh
+ln -sf "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
 
 # ranger
 mkdir -p "$HOME/.config/ranger"
-ln -sf "/home/tule5/dot_files/ranger/rc.conf" "$HOME/.config/ranger/rc.conf"
+ln -sf "$DOTFILES_DIR/ranger/rc.conf" "$HOME/.config/ranger/rc.conf"
 
 # tmux
-ln -sf "/home/tule5/dot_files/tmux/.tmux.conf" "$HOME/.tmux.conf"
+ln -sf "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
 
 # Neovim
 mkdir -p "$HOME/.config"
-ln -sf "/home/tule5/dot_files/neovim" "$HOME/.config/nvim"
+ln -sf "$DOTFILES_DIR/neovim" "$HOME/.config/nvim"
 
 # Neovim custom config
-ln -sf "/home/tule5/dot_files/neovim_custom/lua/config/custom.lua" "/home/tule5/dot_files/neovim/lua/config/custom.lua"
-ln -sf "/home/tule5/dot_files/neovim_custom/lua/plugins/example.lua" "/home/tule5/dot_files/neovim/lua/plugins/example.lua"
+mkdir -p "$DOTFILES_DIR/neovim/lua/config"
+mkdir -p "$DOTFILES_DIR/neovim/lua/plugins"
+
+ln -sf "$DOTFILES_DIR/neovim_custom/lua/config/custom.lua" "$DOTFILES_DIR/neovim/lua/config/custom.lua"
+ln -sf "$DOTFILES_DIR/neovim_custom/lua/plugins/example.lua" "$DOTFILES_DIR/neovim/lua/plugins/example.lua"
+
+echo "Dotfiles have been linked successfully!"

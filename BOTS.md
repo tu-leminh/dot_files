@@ -11,8 +11,6 @@ This file is intended for bots and other automated tools to quickly understand t
         *   `zsh-syntax-highlighting`: Provides syntax highlighting for commands as you type.
         *   `zsh-autosuggestions`: Suggests commands based on history and completions.
         *   `zsh-history-substring-search`: Allows searching through command history with arrow keys.
-*   `lf/`: Contains the `lfrc` file for `lf` configuration.
-    *   `lfrc`: Configures the `lf` file manager to show hidden files by default.
 *   `ranger/`: Contains the `rc.conf` file for `ranger` configuration.
     *   `rc.conf`: Configures the `ranger` file manager to show hidden files by default.
 *   `tmux/`: Contains the `.tmux.conf` file for `tmux` configuration.
@@ -45,7 +43,7 @@ To apply the configurations:
 2. Initialize and update submodules: `git submodule update --init --recursive`
 3. Run the `scripts/apply_configs.sh` script. This will create the necessary symlinks in your home directory and set up the Neovim configuration.
 
-Note: The script assumes the repository is located at `/home/tule5/dot_files`. If you've cloned it elsewhere, you may need to adjust the paths in the script or move the repository to the expected location.
+Note: The script will automatically detect the repository location, making it portable across different systems.
 
 ## Application Versions for Locking
 
