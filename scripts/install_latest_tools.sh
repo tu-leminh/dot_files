@@ -76,25 +76,42 @@ fi
 
 # Install latest stable Neovim
 echo "Installing latest stable Neovim..."
-# Always install the latest stable version
+# Always install the latest stable version by compiling from source
+
+# Install build dependencies for Neovim
+echo "Installing build dependencies for Neovim..."
+sudo apt update
+sudo apt install -y ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip git
+
+# Clone the Neovim repository
+echo "Cloning Neovim repository..."
 cd /tmp
-# Get the latest stable release URL
-NVIM_URL=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | grep browser_download_url | grep nvim-linux64 | head -n 1 | cut -d '"' -f 4)
-if [ -z "$NVIM_URL" ]; then
-    echo "Error: Failed to find Neovim download URL"
+if [ -d "neovim" ]; then
+    rm -rf neovim
+fi
+git clone https://github.com/neovim/neovim.git
+cd neovim
+
+# Get the latest stable release tag
+echo "Finding latest stable release..."
+LATEST_TAG=$(git tag -l --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+if [ -z "$LATEST_TAG" ]; then
+    echo "Error: Failed to find latest stable release tag"
     exit 1
 fi
 
-echo "Downloading Neovim from: $NVIM_URL"
-if ! wget "$NVIM_URL" -O nvim-linux64.tar.gz; then
-    echo "Error: Failed to download Neovim"
-    exit 1
-fi
+echo "Checking out latest stable release: $LATEST_TAG"
+git checkout "$LATEST_TAG"
 
-# Extract and install
-tar xzf nvim-linux64.tar.gz
-sudo install nvim-linux64/bin/nvim /usr/local/bin/
-rm -rf nvim-linux64 nvim-linux64.tar.gz
+# Build and install Neovim
+echo "Building Neovim..."
+make CMAKE_BUILD_TYPE=Release
+echo "Installing Neovim..."
+sudo make install
+
+# Clean up
+cd ..
+rm -rf neovim
 
 if command_exists nvim; then
     NVIM_VERSION=$(nvim --version | head -n 1)

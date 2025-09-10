@@ -51,7 +51,7 @@ This repository installs the latest stable versions of key applications using th
 
 *   **Neovim**: v0.11.4 (stable version)
 *   **Zsh**: v5.8
-*   **Ranger**: v1.9.3
+*   **Ranger**: v1.9.4
 *   **Tmux**: v3.5a
 *   **Lazygit**: v0.55.0
 *   **K9s**: v0.50.9
