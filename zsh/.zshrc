@@ -1,15 +1,21 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+# Check if we're running zsh (but allow sourcing in bash for testing)
+if [[ ! -n "$ZSH_VERSION" ]] && [[ "$0" != "-zsh" ]] && [[ "$0" != "zsh" ]]; then
+  # This is a simple check - we'll be more permissive when sourcing
+  if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # We're running the script directly, not sourcing it
+    echo "This script is intended for Zsh. Please run 'zsh' to switch to Zsh shell."
+    return 2>/dev/null || exit 1
+  fi
 fi
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# Enable autocompletion and required ZSH modules before initializing Oh My Posh
+autoload -Uz compinit zsh/parameter
+compinit
 
-# Source Powerlevel10k theme
-source ~/dot_files/zsh/themes/powerlevel10k/powerlevel10k.zsh-theme
+# Initialize Oh My Posh
+if [[ -f ~/.local/bin/oh-my-posh ]]; then
+  eval "$(~/.local/bin/oh-my-posh init zsh --config ~/dot_files/zsh/oh-my-posh-config.json)"
+fi
 
 # Enable autocompletion
 autoload -Uz compinit
@@ -42,13 +48,19 @@ echo -ne '\e[5 q' # Use beam shape cursor on startup.
 preexec() { echo -ne '\e[5 q' ;} # Use beam shape cursor for each new prompt.
 
 # Load zsh-syntax-highlighting
-source ~/dot_files/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+if [[ -f ~/dot_files/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source ~/dot_files/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
 
 # Load zsh-autosuggestions
-source ~/dot_files/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+if [[ -f ~/dot_files/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  source ~/dot_files/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
 
 # Load zsh-history-substring-search
-source ~/dot_files/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
+if [[ -f ~/dot_files/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh ]]; then
+  source ~/dot_files/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
+fi
 
 # Bind UP and DOWN arrow keys for history search
 bindkey '^[[A' history-substring-search-up
