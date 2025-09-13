@@ -93,28 +93,24 @@ init_zsh_features() {
   bindkey '^ ' autosuggest-accept
 }
 
-# Initialize Oh My Posh
-if [[ -f ~/.local/bin/oh-my-posh ]] && is_zsh; then
-  # Try to initialize Oh My Posh with error handling
-  if ! OMP_CACHE_DIR="$HOME/.cache/oh-my-posh" ~/.local/bin/oh-my-posh init zsh --config ~/dot_files/zsh/oh-my-posh-config.json 2>/dev/null | source /dev/stdin; then
-    echo "Warning: Oh My Posh failed to initialize. Using default prompt."
-    PS1="%n@%m:%~%# "
-  fi
-elif [[ -f ~/.local/bin/oh-my-posh ]]; then
-  # Oh My Posh is installed but we're not in a ZSH environment
-  echo "Info: Oh My Posh available but not in ZSH environment."
-  if [[ -n "$ZSH_VERSION" ]]; then
-    PS1="%n@%m:%~%# "
-  else
-    PS1="\u@\h:\w\$ "
-  fi
+# Oh My Posh Configuration
+# Check if Oh My Posh is installed and configure it
+if [ -f ~/.local/bin/oh-my-posh ]; then
+    # Set the Oh My Posh configuration file path
+    OMP_CONFIG="$HOME/dot_files/zsh/oh-my-posh-config.json"
+    
+    # Check if the configuration file exists
+    if [ -f "$OMP_CONFIG" ]; then
+        # Initialize Oh My Posh with our custom configuration
+        eval "$($HOME/.local/bin/oh-my-posh init zsh --config "$OMP_CONFIG")"
+    else
+        # Fallback to default configuration if ours isn't found
+        echo "Warning: Custom Oh My Posh config not found, using default"
+        eval "$($HOME/.local/bin/oh-my-posh init zsh)"
+    fi
 else
-  # Fallback prompt if Oh My Posh is not installed
-  if [[ -n "$ZSH_VERSION" ]]; then
-    PS1="%n@%m:%~%# "
-  else
-    PS1="\u@\h:\w\$ "
-  fi
+    # If Oh My Posh isn't installed, provide a nice default prompt
+    PROMPT='%F{blue}%n%f@%F{green}%m%f:%F{yellow}%~%f %# '
 fi
 
 # Initialize ZSH modules properly (only when in ZSH)
@@ -133,4 +129,11 @@ if [ -d "$FNM_PATH" ]; then
   if [[ $- == *i* ]]; then
     eval "`fnm env`"
   fi
+fi
+
+# Auto-start tmux for all terminal sessions
+if command -v tmux >/dev/null 2>&1; then
+    if [[ $- == *i* ]] && [[ -z "$TMUX" ]]; then
+        tmux attach-session -t main 2>/dev/null || tmux new-session -s main
+    fi
 fi
