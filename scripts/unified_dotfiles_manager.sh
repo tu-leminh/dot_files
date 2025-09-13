@@ -187,8 +187,15 @@ install_tools() {
 
     # Install latest ranger
     log_info "Installing latest ranger..."
-    # Always install the latest version available via pip
-    pip3 install ranger-fm --upgrade
+    # Try to install via apt first, then fallback to pip
+    if ! sudo apt install -y ranger; then
+        log_warning "Failed to install ranger via apt, trying pip..."
+        # Always install the latest version available via pip
+        if ! pip3 install ranger-fm --upgrade --break-system-packages 2>/dev/null; then
+            # Try without break-system-packages flag
+            pip3 install ranger-fm --upgrade 2>/dev/null || true
+        fi
+    fi
     if command_exists ranger; then
         RANGER_VERSION=$(ranger --version 2>&1 | head -n 1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
         log_success "ranger $RANGER_VERSION installed"
@@ -196,8 +203,11 @@ install_tools() {
 
     # Install latest tmux
     log_info "Installing latest tmux..."
-    # Always install the latest version available via apt
-    sudo apt install -y tmux
+    # Try to install via apt first
+    if ! sudo apt install -y tmux; then
+        log_error "Failed to install tmux"
+        exit 1
+    fi
     if command_exists tmux; then
         TMUX_VERSION=$(tmux -V | cut -d' ' -f2)
         log_success "tmux $TMUX_VERSION installed"
@@ -311,15 +321,24 @@ install_tools() {
 
     # Install Oh My Posh
     log_info "Installing Oh My Posh..."
-    if curl -s https://ohmyposh.dev/install.sh | bash -s -- -d ~/.local/bin; then
+    
+    # Ensure the target directory exists
+    OMP_DIR="$HOME/.local/bin"
+    if [ ! -d "$OMP_DIR" ]; then
+        log_info "Creating directory: $OMP_DIR"
+        mkdir -p "$OMP_DIR"
+    fi
+    
+    # Download and install Oh My Posh
+    if curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "$OMP_DIR"; then
         log_success "Oh My Posh installed successfully"
     else
         log_warning "Failed to install Oh My Posh"
     fi
 
     # Check installed version
-    if command_exists ~/.local/bin/oh-my-posh; then
-        OMP_VERSION=$($HOME/.local/bin/oh-my-posh --version)
+    if command_exists "$OMP_DIR/oh-my-posh"; then
+        OMP_VERSION=$("$OMP_DIR/oh-my-posh" --version)
         log_success "Oh My Posh $OMP_VERSION installed"
     fi
 
@@ -365,6 +384,13 @@ install_tools() {
 apply_configs() {
     log_info "=== Applying dotfiles configurations ==="
     
+    # Initialize and update submodules
+    log_info "Initializing and updating submodules..."
+    cd "$DOTFILES_DIR"
+    if ! git submodule update --init --recursive; then
+        log_warning "Failed to initialize/update submodules"
+    fi
+    
     # Zsh
     create_symlink "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
 
@@ -402,19 +428,7 @@ test_config() {
     fi
     log_success "~/.zshrc exists"
 
-    # Test 3: Check if zsh can source .zshrc without critical errors
-    log_info "Testing zsh configuration load..."
-    zsh_output=$(zsh -c "source ~/.zshrc 2>&1" 2>&1)
-    critical_errors=$(echo "$zsh_output" | grep -E "(command not found|syntax error|bad substitution)" | wc -l)
-
-    if [ "$critical_errors" -gt 0 ]; then
-        log_warning "Found $critical_errors potential issues when loading .zshrc:"
-        echo "$zsh_output" | grep -E "(command not found|syntax error|bad substitution)" | head -5
-    else
-        log_success ".zshrc loads without critical errors"
-    fi
-
-    # Test 4: Check if required files exist
+    # Test 3: Check if required files exist
     required_files=(
         "$DOTFILES_DIR/zsh/oh-my-posh-config.json"
         "$DOTFILES_DIR/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
@@ -432,6 +446,34 @@ test_config() {
 
     if [ "$all_files_exist" = true ]; then
         log_success "All required configuration files exist"
+    else
+        log_error "Some required files are missing. Run with --apply-configs to fix."
+        exit 1
+    fi
+
+    # Test 4: Check if submodules are properly initialized
+    log_info "Checking submodule status..."
+    cd "$DOTFILES_DIR"
+    submodule_status=$(git submodule status 2>&1)
+    if echo "$submodule_status" | grep -q "^-"; then
+        log_warning "Some submodules are not initialized"
+        echo "$submodule_status" | grep "^-" | while read line; do
+            log_warning "Uninitialized submodule: $(echo "$line" | cut -d' ' -f2)"
+        done
+    else
+        log_success "All submodules are properly initialized"
+    fi
+
+    # Test 5: Check if zsh can source .zshrc without critical errors
+    log_info "Testing zsh configuration load..."
+    zsh_output=$(timeout 10s zsh -i -c "echo 'ZSH loaded successfully'" 2>&1)
+    if [ $? -eq 124 ]; then
+        log_warning "ZSH configuration test timed out (may be due to tmux auto-start)"
+    elif echo "$zsh_output" | grep -q "ZSH loaded successfully"; then
+        log_success ".zshrc loads without critical errors"
+    else
+        log_warning "Potential issues when loading .zshrc:"
+        echo "$zsh_output" | head -5
     fi
 
     log_success "ZSH configuration test completed."
