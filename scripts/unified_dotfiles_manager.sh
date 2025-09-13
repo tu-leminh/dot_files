@@ -2,6 +2,9 @@
 # Unified dotfiles management script
 # This script can install tools, apply configurations, or both
 
+# Exit on any error
+set -e
+
 # Default options
 INSTALL_TOOLS=false
 APPLY_CONFIGS=false
@@ -9,9 +12,32 @@ TEST_CONFIG=false
 SET_ZSH_DEFAULT=false
 HELP=false
 
-# Logging function
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Logging functions
 log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+    echo -e "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+}
+
+log_info() {
+    log "${BLUE}INFO${NC}: $1"
+}
+
+log_success() {
+    log "${GREEN}SUCCESS${NC}: $1"
+}
+
+log_warning() {
+    log "${YELLOW}WARNING${NC}: $1"
+}
+
+log_error() {
+    log "${RED}ERROR${NC}: $1" >&2
 }
 
 # Parse command line arguments
@@ -43,7 +69,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         *)
-            echo "Unknown option: $1"
+            log_error "Unknown option: $1"
             HELP=true
             shift
             ;;
@@ -92,7 +118,7 @@ create_symlink() {
     
     # Check if source file exists
     if [ ! -f "$source" ] && [ ! -d "$source" ]; then
-        log "Warning: Source $source does not exist"
+        log_warning "Source $source does not exist"
         return 1
     fi
     
@@ -102,23 +128,29 @@ create_symlink() {
         mkdir -p "$target_dir"
     fi
     
+    # Check if target is already a symlink pointing to the correct source
+    if [ -L "$target" ] && [ "$(readlink "$target")" = "$source" ]; then
+        log_info "Symlink already exists and is correct: $target -> $source"
+        return 0
+    fi
+    
     # Create symlink
     if ln -sf "$source" "$target"; then
-        log "Created symlink: $target -> $source"
+        log_success "Created symlink: $target -> $source"
         return 0
     else
-        log "Error: Failed to create symlink $target -> $source"
+        log_error "Failed to create symlink $target -> $source"
         return 1
     fi
 }
 
 # Function to install tools
 install_tools() {
-    log "=== Installing latest tools ==="
+    log_info "=== Installing latest tools ==="
     
     # Check if we're on Ubuntu
     if ! grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
-        log "Warning: This script is designed for Ubuntu systems."
+        log_warning "This script is designed for Ubuntu systems."
         read -p "Continue anyway? (y/n): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -127,62 +159,62 @@ install_tools() {
     fi
 
     # Install dependencies with error handling
-    log "Updating package lists..."
+    log_info "Updating package lists..."
     if ! sudo apt update; then
-        log "Error: Failed to update package lists"
+        log_error "Failed to update package lists"
         exit 1
     fi
 
-    log "Installing dependencies..."
+    log_info "Installing dependencies..."
     if ! sudo apt install -y software-properties-common build-essential wget curl git \
         libevent-dev libncurses-dev automake pkg-config bison libbz2-dev \
         libreadline-dev libsqlite3-dev libssl-dev libffi-dev zlib1g-dev \
         liblzma-dev llvm libncursesw5-dev xz-utils tk-dev libxml2-dev \
         libxmlsec1-dev libffi-dev liblzma-dev python3-dev python3-pip; then
-        log "Error: Failed to install dependencies"
+        log_error "Failed to install dependencies"
         exit 1
     fi
 
     # Install latest zsh
-    log "Installing latest zsh..."
+    log_info "Installing latest zsh..."
     # Always install the latest version available via apt
     sudo apt install -y zsh
     if command_exists zsh; then
         ZSH_VERSION=$(zsh --version | cut -d' ' -f2)
-        log "zsh $ZSH_VERSION installed"
+        log_success "zsh $ZSH_VERSION installed"
     fi
 
     # Install latest ranger
-    log "Installing latest ranger..."
+    log_info "Installing latest ranger..."
     # Always install the latest version available via pip
     pip3 install ranger-fm --upgrade
     if command_exists ranger; then
         RANGER_VERSION=$(ranger --version 2>&1 | head -n 1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-        log "ranger $RANGER_VERSION installed"
+        log_success "ranger $RANGER_VERSION installed"
     fi
 
     # Install latest tmux
-    log "Installing latest tmux..."
+    log_info "Installing latest tmux..."
     # Always install the latest version available via apt
     sudo apt install -y tmux
     if command_exists tmux; then
         TMUX_VERSION=$(tmux -V | cut -d' ' -f2)
-        log "tmux $TMUX_VERSION installed"
+        log_success "tmux $TMUX_VERSION installed"
     fi
 
     # Install latest stable Neovim
-    log "Installing latest stable Neovim..."
+    log_info "Installing latest stable Neovim..."
     # Always install the latest stable version by compiling from source
 
     # Install build dependencies for Neovim
-    log "Installing build dependencies for Neovim..."
+    log_info "Installing build dependencies for Neovim..."
     if ! sudo apt install -y ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip git; then
-        log "Error: Failed to install build dependencies for Neovim"
+        log_error "Failed to install build dependencies for Neovim"
         exit 1
     fi
 
     # Clone the Neovim repository
-    log "Cloning Neovim repository..."
+    log_info "Cloning Neovim repository..."
     cd /tmp
     if [ -d "neovim" ]; then
         rm -rf neovim
@@ -191,20 +223,20 @@ install_tools() {
     cd neovim
 
     # Get the latest stable release tag
-    log "Finding latest stable release..."
+    log_info "Finding latest stable release..."
     LATEST_TAG=$(git tag -l --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
     if [ -z "$LATEST_TAG" ]; then
-        log "Error: Failed to find latest stable release tag"
+        log_error "Failed to find latest stable release tag"
         exit 1
     fi
 
-    log "Checking out latest stable release: $LATEST_TAG"
+    log_info "Checking out latest stable release: $LATEST_TAG"
     git checkout "$LATEST_TAG"
 
     # Build and install Neovim
-    log "Building Neovim..."
+    log_info "Building Neovim..."
     make CMAKE_BUILD_TYPE=Release
-    log "Installing Neovim..."
+    log_info "Installing Neovim..."
     sudo make install
 
     # Clean up
@@ -213,28 +245,28 @@ install_tools() {
 
     if command_exists nvim; then
         NVIM_VERSION=$(nvim --version | head -n 1)
-        log "Neovim $NVIM_VERSION installed"
+        log_success "Neovim $NVIM_VERSION installed"
     fi
 
     # Install lazygit (latest stable release)
-    log "Installing lazygit..."
+    log_info "Installing lazygit..."
     # Always install the latest version of lazygit
     cd /tmp
     LAZYGIT_URL=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep browser_download_url | grep Linux_x86_64 | head -n 1 | cut -d '"' -f 4)
     if [ -z "$LAZYGIT_URL" ]; then
-        log "Warning: Failed to find lazygit download URL, trying alternative method..."
+        log_warning "Failed to find lazygit download URL, trying alternative method..."
         # Alternative method using the GitHub releases page directly
         LAZYGIT_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
         if [ -z "$LAZYGIT_VERSION" ]; then
-            log "Error: Failed to determine lazygit version"
+            log_error "Failed to determine lazygit version"
             exit 1
         fi
         LAZYGIT_URL="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
     fi
 
-    log "Downloading lazygit from: $LAZYGIT_URL"
+    log_info "Downloading lazygit from: $LAZYGIT_URL"
     if ! wget "$LAZYGIT_URL" -O lazygit.tar.gz; then
-        log "Error: Failed to download lazygit"
+        log_error "Failed to download lazygit"
         exit 1
     fi
 
@@ -245,30 +277,30 @@ install_tools() {
     # Check installed version
     if command_exists lazygit; then
         LAZYGIT_VERSION=$(lazygit --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
-        log "lazygit $LAZYGIT_VERSION installed"
+        log_success "lazygit $LAZYGIT_VERSION installed"
     else
-        log "lazygit installed"
+        log_success "lazygit installed"
     fi
 
     # Install k9s (latest stable release)
-    log "Installing k9s..."
+    log_info "Installing k9s..."
     # Always install the latest version of k9s
     cd /tmp
     K9S_URL=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | grep browser_download_url | grep Linux_amd64 | head -n 1 | cut -d '"' -f 4)
     if [ -z "$K9S_URL" ]; then
-        log "Warning: Failed to find k9s download URL, trying alternative method..."
+        log_warning "Failed to find k9s download URL, trying alternative method..."
         # Alternative method using the GitHub releases page directly
         K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
         if [ -z "$K9S_VERSION" ]; then
-            log "Error: Failed to determine k9s version"
+            log_error "Failed to determine k9s version"
             exit 1
         fi
         K9S_URL="https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_amd64.tar.gz"
     fi
 
-    log "Downloading k9s from: $K9S_URL"
+    log_info "Downloading k9s from: $K9S_URL"
     if ! wget "$K9S_URL" -O k9s.tar.gz; then
-        log "Error: Failed to download k9s"
+        log_error "Failed to download k9s"
         exit 1
     fi
 
@@ -277,17 +309,17 @@ install_tools() {
     rm k9s.tar.gz k9s
 
     # Install Oh My Posh
-    log "Installing Oh My Posh..."
+    log_info "Installing Oh My Posh..."
     if curl -s https://ohmyposh.dev/install.sh | bash -s -- -d ~/.local/bin; then
-        log "Oh My Posh installed successfully"
+        log_success "Oh My Posh installed successfully"
     else
-        log "Warning: Failed to install Oh My Posh"
+        log_warning "Failed to install Oh My Posh"
     fi
 
     # Check installed version
     if command_exists ~/.local/bin/oh-my-posh; then
         OMP_VERSION=$($HOME/.local/bin/oh-my-posh --version)
-        log "Oh My Posh $OMP_VERSION installed"
+        log_success "Oh My Posh $OMP_VERSION installed"
     fi
 
     # Check installed version
@@ -298,39 +330,39 @@ install_tools() {
             # Try alternative format
             K9S_VERSION=$(echo "$K9S_VERSION_OUTPUT" | head -n 1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
         fi
-        log "k9s $K9S_VERSION installed"
+        log_success "k9s $K9S_VERSION installed"
     else
-        log "k9s installed"
+        log_success "k9s installed"
     fi
 
     # Verify installations
-    log "Verifying installations..."
-    log "ZSH version: $(zsh --version)"
-    log "Ranger version: ranger $(ranger --version 2>&1 | head -n 1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
-    log "Tmux version: $(tmux -V)"
-    log "Neovim version: $(nvim --version | head -n 1)"
+    log_info "Verifying installations..."
+    log_info "ZSH version: $(zsh --version)"
+    log_info "Ranger version: ranger $(ranger --version 2>&1 | head -n 1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
+    log_info "Tmux version: $(tmux -V)"
+    log_info "Neovim version: $(nvim --version | head -n 1)"
     if command_exists lazygit; then
-        log "Lazygit version: $(lazygit --version 2>&1)"
+        log_info "Lazygit version: $(lazygit --version 2>&1)"
     else
-        log "Lazygit: Not installed"
+        log_warning "Lazygit: Not installed"
     fi
     if command_exists k9s; then
-        log "K9s version: $(k9s version 2>&1 | grep Version)"
+        log_info "K9s version: $(k9s version 2>&1 | grep Version)"
     else
-        log "K9s: Not installed"
+        log_warning "K9s: Not installed"
     fi
     if command_exists ~/.local/bin/oh-my-posh; then
-        log "Oh My Posh version: $($HOME/.local/bin/oh-my-posh --version)"
+        log_info "Oh My Posh version: $($HOME/.local/bin/oh-my-posh --version)"
     else
-        log "Oh My Posh: Not installed"
+        log_warning "Oh My Posh: Not installed"
     fi
 
-    log "All tools have been updated to their latest versions!"
+    log_success "All tools have been updated to their latest versions!"
 }
 
 # Function to apply configurations
 apply_configs() {
-    log "=== Applying dotfiles configurations ==="
+    log_info "=== Applying dotfiles configurations ==="
     
     # Zsh
     create_symlink "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
@@ -348,37 +380,37 @@ apply_configs() {
     create_symlink "$DOTFILES_DIR/neovim_custom/lua/config/custom.lua" "$DOTFILES_DIR/neovim/lua/config/custom.lua"
     create_symlink "$DOTFILES_DIR/neovim_custom/lua/plugins/example.lua" "$DOTFILES_DIR/neovim/lua/plugins/example.lua"
 
-    log "Dotfiles have been linked successfully!"
+    log_success "Dotfiles have been linked successfully!"
 }
 
 # Function to test ZSH configuration
 test_config() {
-    log "Testing ZSH configuration..."
+    log_info "Testing ZSH configuration..."
 
     # Test 1: Check if zsh is installed
     if ! command -v zsh &> /dev/null; then
-        log "FAIL: zsh is not installed"
+        log_error "zsh is not installed"
         exit 1
     fi
-    log "PASS: zsh is installed ($(zsh --version))"
+    log_success "zsh is installed ($(zsh --version))"
 
     # Test 2: Check if .zshrc file exists
     if [ ! -f ~/.zshrc ]; then
-        log "FAIL: ~/.zshrc does not exist"
+        log_error "~/.zshrc does not exist"
         exit 1
     fi
-    log "PASS: ~/.zshrc exists"
+    log_success "~/.zshrc exists"
 
     # Test 3: Check if zsh can source .zshrc without critical errors
-    log "Testing zsh configuration load..."
+    log_info "Testing zsh configuration load..."
     zsh_output=$(zsh -c "source ~/.zshrc 2>&1" 2>&1)
     critical_errors=$(echo "$zsh_output" | grep -E "(command not found|syntax error|bad substitution)" | wc -l)
 
     if [ "$critical_errors" -gt 0 ]; then
-        log "WARNING: Found $critical_errors potential issues when loading .zshrc:"
+        log_warning "Found $critical_errors potential issues when loading .zshrc:"
         echo "$zsh_output" | grep -E "(command not found|syntax error|bad substitution)" | head -5
     else
-        log "PASS: .zshrc loads without critical errors"
+        log_success ".zshrc loads without critical errors"
     fi
 
     # Test 4: Check if required files exist
@@ -392,57 +424,63 @@ test_config() {
     all_files_exist=true
     for file in "${required_files[@]}"; do
         if [ ! -f "$file" ]; then
-            log "FAIL: Required file $file does not exist"
+            log_error "Required file $file does not exist"
             all_files_exist=false
         fi
     done
 
     if [ "$all_files_exist" = true ]; then
-        log "PASS: All required configuration files exist"
+        log_success "All required configuration files exist"
     fi
 
-    log "ZSH configuration test completed."
+    log_success "ZSH configuration test completed."
 }
 
 # Function to set zsh as default shell
 set_zsh_default() {
-    log "=== Setting zsh as default shell ==="
+    log_info "=== Setting zsh as default shell ==="
     read -p "Do you want to set zsh as your default shell? (y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         if chsh -s $(which zsh); then
-            log "zsh has been set as your default shell. Log out and back in to apply changes."
+            log_success "zsh has been set as your default shell. Log out and back in to apply changes."
         else
-            log "Error: Failed to set zsh as default shell"
+            log_error "Failed to set zsh as default shell"
         fi
     fi
 }
 
-# Execute requested actions
-if [[ "$INSTALL_TOOLS" == true ]]; then
-    install_tools
-fi
+# Main execution
+main() {
+    # Execute requested actions
+    if [[ "$INSTALL_TOOLS" == true ]]; then
+        install_tools
+    fi
 
-if [[ "$APPLY_CONFIGS" == true ]]; then
-    apply_configs
-fi
+    if [[ "$APPLY_CONFIGS" == true ]]; then
+        apply_configs
+    fi
 
-if [[ "$TEST_CONFIG" == true ]]; then
-    test_config
-fi
+    if [[ "$TEST_CONFIG" == true ]]; then
+        test_config
+    fi
 
-# Set zsh as default shell if requested and if tools were installed
-if [[ "$SET_ZSH_DEFAULT" == true ]] && [[ "$INSTALL_TOOLS" == true ]]; then
-    set_zsh_default
-fi
+    # Set zsh as default shell if requested and if tools were installed
+    if [[ "$SET_ZSH_DEFAULT" == true ]] && [[ "$INSTALL_TOOLS" == true ]]; then
+        set_zsh_default
+    fi
 
-log "=== Dotfiles management complete ==="
-if [[ "$INSTALL_TOOLS" == true ]] && [[ "$APPLY_CONFIGS" == true ]]; then
-    log "All tools installed and configurations applied."
-elif [[ "$INSTALL_TOOLS" == true ]]; then
-    log "Tools installation complete."
-elif [[ "$APPLY_CONFIGS" == true ]]; then
-    log "Configurations applied."
-elif [[ "$TEST_CONFIG" == true ]]; then
-    log "Configuration test completed."
-fi
+    log_success "=== Dotfiles management complete ==="
+    if [[ "$INSTALL_TOOLS" == true ]] && [[ "$APPLY_CONFIGS" == true ]]; then
+        log_info "All tools installed and configurations applied."
+    elif [[ "$INSTALL_TOOLS" == true ]]; then
+        log_info "Tools installation complete."
+    elif [[ "$APPLY_CONFIGS" == true ]]; then
+        log_info "Configurations applied."
+    elif [[ "$TEST_CONFIG" == true ]]; then
+        log_info "Configuration test completed."
+    fi
+}
+
+# Run main function
+main "$@"

@@ -19,6 +19,7 @@ This file is intended for bots and other automated tools to quickly understand t
 *   `neovim_custom/`: Contains custom Neovim configurations that are tracked by the main repository.
 *   `scripts/`: Contains scripts for managing the dotfiles.
     *   `unified_dotfiles_manager.sh`: A unified shell script that can install the latest versions of tools, apply dotfiles configurations, and test configurations. It replaces the functionality of all previous scripts with command-line options.
+    *   `auto_tmux_ssh.sh`: A script that automatically starts tmux when connecting via SSH. This functionality is also integrated directly into the `.zshrc` configuration.
     *   `test_zsh_config.sh`: (Deprecated) A script to verify that the ZSH configuration loads correctly and all required files exist.
     *   `apply_configs.sh`: (Deprecated) A shell script that creates symlinks from the home directory to the dotfiles in this repository. It also manages the Neovim configuration.
     *   `install_latest_tools.sh`: (Deprecated) A shell script that installs the latest versions of nvim, ranger, tmux, and zsh on Ubuntu systems.
@@ -97,6 +98,7 @@ The following improvements have been made to enhance code quality and reliabilit
 6. Merged all scripts into a single unified script with command-line options
 7. Replaced Powerlevel10k with Oh My Posh for better maintainability
 8. Updated Oh My Posh configuration to use the wholespace theme
+9. Added automatic tmux startup when connecting via SSH
 
 ## Updating BOTS.md
 
