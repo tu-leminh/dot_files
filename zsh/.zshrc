@@ -106,11 +106,12 @@ bindkey '^ ' autosuggest-accept
 # Export terminal color settings for tmux and Neovim
 export TERM="xterm-256color"
 
-# Auto-start tmux when connecting via SSH
-if [[ -n "$SSH_CONNECTION" ]]; then
-    if command -v tmux >/dev/null 2>&1; then
-        if [[ -z "$TMUX" ]]; then
-            tmux attach-session -t ssh_tmux 2>/dev/null || tmux new-session -s ssh_tmux
-        fi
+# Auto-start tmux for all terminal sessions
+# Check if tmux is installed and we should auto-start it
+if command -v tmux >/dev/null 2>&1; then
+    # Only auto-start tmux if we're in an interactive shell and not already in tmux
+    if [[ $- == *i* ]] && [[ -z "$TMUX" ]]; then
+        # Try to attach to an existing session or create a new one
+        tmux attach-session -t main 2>/dev/null || tmux new-session -s main
     fi
 fi

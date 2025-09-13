@@ -77,7 +77,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Show help if requested or no options provided
-if [[ "$HELP" == true ]] || [[ "$INSTALL_TOOLS" == false && "$APPLY_CONFIGS" == false && "$TEST_CONFIG" == false ]]; then
+if [[ "$HELP" == true ]] || [[ "$INSTALL_TOOLS" == false && "$APPLY_CONFIGS" == false && "$TEST_CONFIG" == false && "$SET_ZSH_DEFAULT" == false ]]; then
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
@@ -85,7 +85,7 @@ if [[ "$HELP" == true ]] || [[ "$INSTALL_TOOLS" == false && "$APPLY_CONFIGS" == 
     echo "  -c, --apply-configs    Apply dotfiles configurations (create symlinks)"
     echo "  -t, --test-config      Test ZSH configuration"
     echo "  -a, --all              Install tools and apply configurations"
-    echo "  -z, --set-zsh-default  Set zsh as the default shell (only works with -i or -a)"
+    echo "  -z, --set-zsh-default  Set zsh as the default shell"
     echo "  -h, --help             Show this help message"
     echo ""
     echo "Examples:"
@@ -93,6 +93,7 @@ if [[ "$HELP" == true ]] || [[ "$INSTALL_TOOLS" == false && "$APPLY_CONFIGS" == 
     echo "  $0 -c                  Apply configurations only"
     echo "  $0 -t                  Test ZSH configuration"
     echo "  $0 -a                  Install tools and apply configurations"
+    echo "  $0 -z                  Set zsh as the default shell"
     echo "  $0 -a -z               Install tools, apply configurations, and set zsh as default shell"
     exit 0
 fi
@@ -437,15 +438,17 @@ test_config() {
 }
 
 # Function to set zsh as default shell
+# Function to set zsh as default shell
 set_zsh_default() {
     log_info "=== Setting zsh as default shell ==="
     read -p "Do you want to set zsh as your default shell? (y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        if chsh -s $(which zsh); then
+        if chsh -s /usr/bin/zsh; then
             log_success "zsh has been set as your default shell. Log out and back in to apply changes."
         else
-            log_error "Failed to set zsh as default shell"
+            log_error "Failed to set zsh as default shell. This may be because you need to enter your password for the chsh command."
+            log_info "Try running 'chsh -s /usr/bin/zsh' manually and enter your password when prompted."
         fi
     fi
 }
@@ -465,8 +468,8 @@ main() {
         test_config
     fi
 
-    # Set zsh as default shell if requested and if tools were installed
-    if [[ "$SET_ZSH_DEFAULT" == true ]] && [[ "$INSTALL_TOOLS" == true ]]; then
+    # Set zsh as default shell if requested
+    if [[ "$SET_ZSH_DEFAULT" == true ]]; then
         set_zsh_default
     fi
 
@@ -479,6 +482,8 @@ main() {
         log_info "Configurations applied."
     elif [[ "$TEST_CONFIG" == true ]]; then
         log_info "Configuration test completed."
+    elif [[ "$SET_ZSH_DEFAULT" == true ]]; then
+        log_info "Default shell setting process completed."
     fi
 }
 
