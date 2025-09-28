@@ -5,7 +5,17 @@ This directory contains the wallpaper used by the sway configuration.
 ## Setup
 
 The sway configuration expects a wallpaper file named `wallpaper.png`. 
-Place your wallpaper image with this name in `~/Pictures/Wallpapers/` for use with sway and swaylock.
+You need to create a symlink from `~/Pictures/Wallpapers` to this directory in the dotfiles for sway and swaylock to work properly:
+
+```bash
+# Remove any existing Pictures/Wallpapers directory
+rm -rf ~/Pictures/Wallpapers
+
+# Create the symlink
+ln -sf /path/to/your/dotfiles/wallpapers ~/Pictures/Wallpapers
+```
+
+Alternatively, you can copy your preferred wallpaper as `wallpaper.png` to `~/Pictures/Wallpapers/`.
 
 ## Current Wallpaper
 
