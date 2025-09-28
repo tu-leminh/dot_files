@@ -1,0 +1,6 @@
+Clock icon: 
+CPU icon: 
+Memory icon: 
+Battery icon: 
+Network icon: 
+Volume icon: 

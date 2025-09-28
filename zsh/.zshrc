@@ -131,9 +131,17 @@ if [ -d "$FNM_PATH" ]; then
   fi
 fi
 
+# Add Go binaries to PATH if not already present
+if [[ ":$PATH:" != *":$HOME/go/bin:"* ]]; then
+    export PATH="$PATH:$HOME/go/bin"
+fi
+
 # Auto-start tmux for all terminal sessions
 if command -v tmux >/dev/null 2>&1; then
     if [[ $- == *i* ]] && [[ -z "$TMUX" ]]; then
         tmux attach-session -t main 2>/dev/null || tmux new-session -s main
     fi
 fi
+export PATH=$PATH:/home/mt/.local/bin
+export EDITOR=nvim
+export VISUAL=nvim

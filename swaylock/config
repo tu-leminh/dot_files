@@ -1,0 +1,65 @@
+# Swaylock configuration
+
+# Enable or disable the clock
+show-clock=true
+
+# Enable or disable showing failed attempts
+show-failed-attempts=true
+
+# Font settings
+font=JetBrainsMono Nerd Font
+font-size=24
+
+# Separator settings
+separator-color=00000000
+
+# Color settings
+inside-color=2e3440bf
+inside-clear-color=5e81acbf
+inside-caps-lock-color=5e81acbf
+inside-ver-color=5e81acbf
+inside-wrong-color=bf616abf
+
+ring-color=88c0d0bf
+ring-clear-color=88c0d0bf
+ring-caps-lock-color=88c0d0bf
+ring-ver-color=88c0d0bf
+ring-wrong-color=bf616abf
+
+text-color=eceff4ff
+text-clear-color=eceff4ff
+text-caps-lock-color=eceff4ff
+text-ver-color=eceff4ff
+text-wrong-color=eceff4ff
+
+# Enable or disable the timeout for showing the clock
+# timeout=60
+
+# Enable or disable showing failed attempts
+show-failed-attempts=true
+
+# Font settings
+font=JetBrainsMono Nerd Font
+font-size=24
+
+# Separator settings
+separator-color=00000000
+
+# Color settings
+inside-color=2e3440bf
+inside-clear-color=5e81acbf
+inside-caps-lock-color=5e81acbf
+inside-ver-color=5e81acbf
+inside-wrong-color=bf616abf
+
+ring-color=88c0d0bf
+ring-clear-color=88c0d0bf
+ring-caps-lock-color=88c0d0bf
+ring-ver-color=88c0d0bf
+ring-wrong-color=bf616abf
+
+text-color=eceff4ff
+text-clear-color=eceff4ff
+text-caps-lock-color=eceff4ff
+text-ver-color=eceff4ff
+text-wrong-color=eceff4ff

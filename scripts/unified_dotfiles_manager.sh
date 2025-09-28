@@ -11,6 +11,7 @@ APPLY_CONFIGS=false
 TEST_CONFIG=false
 SET_ZSH_DEFAULT=false
 HELP=false
+FORCE_REINSTALL=false
 
 # Color codes for output
 RED='\033[0;31m'
@@ -87,6 +88,10 @@ while [[ $# -gt 0 ]]; do
             SET_ZSH_DEFAULT=true
             shift
             ;;
+        -f|--force-reinstall)
+            FORCE_REINSTALL=true
+            shift
+            ;;
         -h|--help)
             HELP=true
             shift
@@ -104,11 +109,12 @@ if [[ "$HELP" == true ]] || [[ "$INSTALL_TOOLS" == false && "$APPLY_CONFIGS" == 
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  -i, --install-tools    Install the latest versions of tools (nvim, ranger, tmux, zsh, lazygit, k9s)"
+    echo "  -i, --install-tools    Install the latest versions of tools (nvim, ranger, tmux, zsh, lazygit, k9s, sway, mako, swaylock, clipse)"
     echo "  -c, --apply-configs    Apply dotfiles configurations (create symlinks)"
     echo "  -t, --test-config      Test ZSH configuration"
     echo "  -a, --all              Install tools and apply configurations"
     echo "  -z, --set-zsh-default  Set zsh as the default shell"
+    echo "  -f, --force-reinstall  Force reinstall tools even if already installed"
     echo "  -h, --help             Show this help message"
     echo ""
     echo "Examples:"
@@ -170,7 +176,7 @@ create_symlink() {
 
 # Function to install tools
 install_tools() {
-    show_progress "Installing latest tools"
+    show_progress "Installing latest tools (nvim, ranger, tmux, zsh, lazygit, k9s, sway, mako, swaylock, clipse)"
     
     # Check if we're on Ubuntu
     if ! grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
@@ -183,28 +189,24 @@ install_tools() {
     fi
 
     # Install dependencies with error handling
-    show_progress "Updating package lists..."
+    show_progress \"Updating package lists...\"
     # Try non-interactive sudo first
     if ! sudo -n apt update > /dev/null 2>&1; then
-        log_warning "Cannot update package lists without password. Skipping for testing purposes."
+        log_warning \"Cannot update package lists without password. Skipping for testing purposes.\"
         # For testing, we'll skip this step
         # In a real scenario, you would need to provide the password
     else
-        show_progress "Package lists updated successfully"
+        show_progress \"Package lists updated successfully\"
     fi
 
-    show_progress "Installing dependencies..."
+    show_progress \"Installing general dependencies...\"
     # Try non-interactive sudo first
-    if ! sudo -n apt install -y software-properties-common build-essential wget curl git \
-        libevent-dev libncurses-dev automake pkg-config bison libbz2-dev \
-        libreadline-dev libsqlite3-dev libssl-dev libffi-dev zlib1g-dev \
-        liblzma-dev llvm libncursesw5-dev xz-utils tk-dev libxml2-dev \
-        libxmlsec1-dev libffi-dev liblzma-dev python3-dev python3-pip > /dev/null 2>&1; then
-        log_warning "Cannot install dependencies without password. Skipping for testing purposes."
+    if ! sudo -n apt install -y software-properties-common build-essential wget curl git > /dev/null 2>&1; then
+        log_warning \"Cannot install dependencies without password. Skipping for testing purposes.\"
         # For testing, we'll skip this step
         # In a real scenario, you would need to provide the password
     else
-        show_progress "Dependencies installed successfully"
+        show_progress \"General dependencies installed successfully\"
     fi
 
     # Install latest zsh
@@ -297,9 +299,9 @@ install_tools() {
 
     # Install build dependencies for Neovim
     show_progress "Installing build dependencies for Neovim..."
-    if ! sudo -n apt install -y ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip git > /dev/null 2>&1; then
+    if ! sudo -n apt install -y ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip > /dev/null 2>&1; then
         log_warning "Need sudo password to install build dependencies for Neovim"
-        if ! sudo apt install -y ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip git > /dev/null 2>&1; then
+        if ! sudo apt install -y ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip > /dev/null 2>&1; then
             log_error "Failed to install build dependencies for Neovim"
             exit 1
         fi
@@ -419,6 +421,42 @@ install_tools() {
     fi
     rm k9s.tar.gz k9s > /dev/null 2>&1
 
+    # Install clipse
+    show_progress "Installing clipse..."
+    if command -v go >/dev/null 2>&1; then
+        # Install clipse using go install
+        if ! go install github.com/savedra1/clipse@latest > /dev/null 2>&1; then
+            log_error "Failed to install clipse via go install"
+            exit 1
+        else
+            # Ensure GOPATH is set
+            GOPATH=${GOPATH:-$HOME/go}
+            CLIPSE_BIN="$GOPATH/bin/clipse"
+            if [ -f "$CLIPSE_BIN" ]; then
+                log_success "clipse installed successfully at $CLIPSE_BIN"
+                
+                # Make sure the clipse binary has execution permission
+                chmod +x "$CLIPSE_BIN" > /dev/null 2>&1
+                
+                # Try to create a symlink to /usr/local/bin if possible
+                if sudo -n ln -sf "$CLIPSE_BIN" /usr/local/bin/clipse > /dev/null 2>&1; then
+                    log_success "clipse made available system-wide"
+                else
+                    # Add to user's .bashrc/.zshrc if not already done
+                    if ! grep -q 'export.*GOPATH.*bin' ~/.zshrc > /dev/null 2>&1; then
+                        echo 'export PATH="$PATH:$GOPATH/bin"' >> ~/.zshrc
+                        log_info "Added GOPATH/bin to PATH in ~/.zshrc"
+                    fi
+                    log_info "clipse available at $CLIPSE_BIN - ensure GOPATH/bin is in your PATH"
+                fi
+            else
+                log_error "clipse binary not found at expected location: $CLIPSE_BIN"
+            fi
+        fi
+    else
+        log_warning "Go is not installed, cannot install clipse. Please install Go first."
+    fi
+
     # Install Oh My Posh
     show_progress "Installing Oh My Posh..."
     
@@ -492,6 +530,35 @@ install_tools() {
         log_warning "fd/fdfind: Not installed"
     fi
 
+    # Install Sway and related packages
+    show_progress "Installing Sway and related packages..."
+    
+    # Check if Sway is already installed
+    SWAY_INSTALLED=false
+    if command -v sway >/dev/null 2>&1 || command -v Sway >/dev/null 2>&1; then
+        log_info "Sway is already installed"
+        SWAY_INSTALLED=true
+        log_info "Skipping Sway installation (already installed)"
+    fi
+    
+    if [[ "$SWAY_INSTALLED" == false ]]; then
+        # Install Sway and related packages
+        show_progress "Installing Sway and related packages..."
+        if ! sudo -n apt install -y sway mako-notifier grim slurp brightnessctl pamixer playerctl thunar foot wmenu > /dev/null 2>&1; then
+            log_warning "Need sudo password to install Sway and related packages"
+            if sudo apt install -y sway mako-notifier grim slurp brightnessctl pamixer playerctl thunar foot wmenu > /dev/null 2>&1; then
+                log_success "Sway and related packages installed successfully"
+            else
+                log_error "Failed to install Sway packages"
+                exit 1
+            fi
+        else
+            log_success "Sway and related packages installed successfully"
+        fi
+    fi
+    
+    
+
     show_progress "All tools have been updated to their latest versions!"
 }
 
@@ -521,6 +588,19 @@ apply_configs() {
     # Neovim custom config
     create_symlink "$DOTFILES_DIR/neovim_custom/lua/config/custom.lua" "$DOTFILES_DIR/neovim/lua/config/custom.lua"
     create_symlink "$DOTFILES_DIR/neovim_custom/lua/plugins/example.lua" "$DOTFILES_DIR/neovim/lua/plugins/example.lua"
+
+    # Kitty terminal
+    create_symlink "$DOTFILES_DIR/kitty" "$HOME/.config/kitty"
+    
+    # Mako notification daemon
+    create_symlink "$DOTFILES_DIR/mako" "$HOME/.config/mako"
+    
+    # Wofi application launcher
+    create_symlink "$DOTFILES_DIR/wofi" "$HOME/.config/wofi"
+
+    # Sway
+    create_symlink "$DOTFILES_DIR/sway/config" "$HOME/.config/sway/config"
+    create_symlink "$DOTFILES_DIR/waybar" "$HOME/.config/waybar"
 
     show_progress "Dotfiles have been linked successfully!"
 }
@@ -634,6 +714,41 @@ main() {
     # Set zsh as default shell if requested
     if [[ "$SET_ZSH_DEFAULT" == true ]]; then
         set_zsh_default
+    fi
+    
+    # Set neovim as default editor
+    show_progress "Setting neovim as default editor..."
+    if command -v nvim >/dev/null 2>&1; then
+        # Set nvim as the default editor for the system
+        if [ -w "/etc/environment" ]; then
+            if ! grep -q "EDITOR=nvim" /etc/environment 2>/dev/null; then
+                echo 'EDITOR=nvim' | sudo tee -a /etc/environment > /dev/null
+            fi
+            if ! grep -q "VISUAL=nvim" /etc/environment 2>/dev/null; then
+                echo 'VISUAL=nvim' | sudo tee -a /etc/environment > /dev/null
+            fi
+        else
+            # Fallback: add to user's shell config
+            if ! grep -q "export EDITOR=nvim" ~/.zshrc 2>/dev/null && [ -w ~/.zshrc ]; then
+                echo 'export EDITOR=nvim' >> ~/.zshrc
+                echo 'export VISUAL=nvim' >> ~/.zshrc
+            fi
+        fi
+        
+        # Update alternatives system-wide if possible
+        if command -v update-alternatives >/dev/null 2>&1; then
+            if [ -x "/usr/local/bin/nvim" ]; then
+                sudo update-alternatives --install /usr/bin/editor editor /usr/local/bin/nvim 100
+                sudo update-alternatives --install /usr/bin/vi vi /usr/local/bin/nvim 100
+            elif [ -x "/usr/bin/nvim" ]; then
+                sudo update-alternatives --install /usr/bin/editor editor /usr/bin/nvim 100
+                sudo update-alternatives --install /usr/bin/vi vi /usr/bin/nvim 100
+            fi
+        fi
+        
+        log_success "Neovim set as default editor"
+    else
+        log_warning "Neovim not found, cannot set as default editor"
     fi
 
     show_progress "Dotfiles management complete"
